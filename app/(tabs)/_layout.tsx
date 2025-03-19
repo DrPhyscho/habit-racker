@@ -10,22 +10,23 @@ export default function TabLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#e5e5e5',
-          height: 65, // ✅ Increased height for better spacing
-          paddingBottom: 10, // ✅ Added more padding for readability
+          height: 65,
+          paddingBottom: 10,
           paddingTop: 8,
-          bottom: 15, // ✅ Raised the tab bar 15px higher
+          bottom: 15,
           borderTopLeftRadius: 15,
           borderTopRightRadius: 15,
-          elevation: 5, // ✅ Adds a subtle shadow for visibility
+          elevation: 5,
         },
         tabBarLabelStyle: {
-          fontSize: 14, // ✅ Ensures labels remain readable
+          fontSize: 14,
           marginBottom: 6,
         },
         tabBarActiveTintColor: '#6366f1',
         tabBarInactiveTintColor: '#9ca3af',
         headerShown: false,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -34,7 +35,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="habits"
+        name="habits" // This name MUST match the file name (habits.tsx)
         options={{
           title: 'Habits',
           tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,

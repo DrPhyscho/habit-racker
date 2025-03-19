@@ -7,10 +7,11 @@ import {
   Modal,
   Platform,
 } from "react-native";
-import { Text, TextInput, Button, Checkbox, useTheme } from "react-native-paper";
+import { Text, TextInput, Checkbox, useTheme } from "react-native-paper";
 import { useHabits } from "../../../hooks/useHabits";
 import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 
 const DAYS = [
   "Monday",
@@ -30,23 +31,11 @@ export default function NewHabitScreen() {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [reminderTime, setReminderTime] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
-  const [error, setError] = useState("");
-  const [showError, setShowError] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [everyDay, setEveryDay] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      setError("Please enter a habit name");
-      setShowError(true);
-      return;
-    }
-
-    if (selectedDays.length === 0) {
-      setError("Please select at least one day");
-      setShowError(true);
-      return;
-    }
+    if (!name.trim() || selectedDays.length === 0) return;
 
     const success = await addHabit({
       name: name.trim(),
@@ -56,23 +45,18 @@ export default function NewHabitScreen() {
     });
 
     if (success) {
+      setName("");
+      setDescription("");
+      setSelectedDays([]);
+      setEveryDay(false);
+      setReminderTime(new Date());
       setShowSuccess(true);
+
       setTimeout(() => {
         setShowSuccess(false);
         router.back();
       }, 1500);
-    } else {
-      setError("Failed to save habit. Please try again.");
-      setShowError(true);
     }
-  };
-
-  const clearForm = () => {
-    setName("");
-    setDescription("");
-    setSelectedDays([]);
-    setReminderTime(new Date());
-    setEveryDay(false);
   };
 
   const toggleDay = (day: string) => {
@@ -127,13 +111,8 @@ export default function NewHabitScreen() {
           </Text>
 
           <View style={styles.dayRow}>
-            <Checkbox
-              status={everyDay ? "checked" : "unchecked"}
-              onPress={toggleEveryDay}
-            />
-            <Text onPress={toggleEveryDay} style={styles.dayLabel}>
-              Every Day
-            </Text>
+            <Checkbox status={everyDay ? "checked" : "unchecked"} onPress={toggleEveryDay} />
+            <Text onPress={toggleEveryDay} style={styles.dayLabel}>Every Day</Text>
           </View>
 
           <View style={styles.daysContainer}>
@@ -143,69 +122,68 @@ export default function NewHabitScreen() {
                   status={selectedDays.includes(day) ? "checked" : "unchecked"}
                   onPress={() => toggleDay(day)}
                 />
-                <Text onPress={() => toggleDay(day)} style={styles.dayLabel}>
-                  {day}
-                </Text>
+                <Text onPress={() => toggleDay(day)} style={styles.dayLabel}>{day}</Text>
               </View>
             ))}
           </View>
 
-          {/* ✅ Time Picker */}
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Reminder Time
-          </Text>
-          <TouchableOpacity
-            style={styles.timePickerButton}
-            onPress={() => setShowPicker(true)}
-          >
+          <Text variant="titleMedium" style={styles.sectionTitle}>Reminder Time</Text>
+          <TouchableOpacity style={styles.timePickerButton} onPress={() => setShowPicker(true)}>
             <Text style={styles.timePickerText}>
-              {reminderTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}
+              {reminderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
             </Text>
           </TouchableOpacity>
 
-          {/* ✅ Modal for iOS Time Picker to prevent auto-closing */}
           {Platform.OS === "ios" && showPicker && (
-            <Modal transparent={true} visible={showPicker} animationType="slide">
+            <Modal transparent visible={showPicker} animationType="slide">
               <View style={styles.modalContainer}>
                 <View style={styles.modalContent}>
                   <DateTimePicker
                     value={reminderTime}
                     mode="time"
                     display="spinner"
-                    textColor="black" // ✅ Forces black text
-                    themeVariant="light" // ✅ Ensures proper contrast
                     onChange={(event, selectedTime) => {
                       if (selectedTime) {
                         setReminderTime(selectedTime);
                       }
                     }}
                   />
-                  <Button mode="contained" onPress={() => setShowPicker(false)}>
-                    Done
-                  </Button>
+                  <TouchableOpacity onPress={() => setShowPicker(false)} style={styles.doneButton}>
+                    <Text style={styles.doneButtonText}>Done</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </Modal>
           )}
 
-          <Button
-            mode="contained"
-            onPress={handleSave}
-            style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
-            disabled={!name.trim()}
-          >
-            Create Habit
-          </Button>
+          <TouchableOpacity onPress={handleSave} disabled={!name.trim()} style={styles.saveButton}>
+            <LinearGradient
+              colors={["#8B48FF", "#E539F5", "#30C5FF"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.gradientButton}
+            >
+              <Text style={styles.buttonText}>Create Habit</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* ✅ Success Popup */}
+      {showSuccess && (
+        <Modal transparent visible={showSuccess} animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.successPopup}>
+              <Text style={styles.successText}>✅ New Habit Created!</Text>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
+// ✅ Updated Styles
 const styles = StyleSheet.create({
   fullScreen: {
     flex: 1,
@@ -234,7 +212,6 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
     backgroundColor: "#fff",
-    color: "#000",
   },
   sectionTitle: {
     marginBottom: 12,
@@ -274,19 +251,37 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
-  modalContent: {
+  successPopup: {
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
+    width: "80%",
+  },
+  successText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
   },
   saveButton: {
     marginTop: 24,
-    paddingVertical: 8,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  gradientButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
-
 
 export default NewHabitScreen;
