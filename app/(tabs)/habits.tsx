@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, Platform, TouchableOpacity } from 'react-native';
-import { Text, FAB, Surface, useTheme, Button, IconButton, Snackbar } from 'react-native-paper';
-import { useHabits } from '../../hooks/useHabits';
-import { Link, useFocusEffect } from 'expo-router';
-import { Plus } from 'lucide-react-native';
-import { format } from 'date-fns';
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, Platform, TouchableOpacity } from "react-native";
+import { Text, FAB, Surface, useTheme, Button, IconButton, Snackbar } from "react-native-paper";
+import { useHabits } from "../../hooks/useHabits";
+import { Link, useFocusEffect } from "expo-router";
+import { Plus } from "lucide-react-native";
+import { format } from "date-fns";
 
 export default function HabitsScreen() {
   const theme = useTheme();
@@ -28,7 +28,7 @@ export default function HabitsScreen() {
   const handleCompleteHabit = async (habitId: string, habitFrequency: string[]) => {
     if (!completedHabitIds.includes(habitId)) {
       await completeHabit(habitId);
-      setCompletedHabitIds(prev => [...prev, habitId]);
+      setCompletedHabitIds((prev) => [...prev, habitId]);
       if (habitFrequency.length === 7) {
         setSnackbarVisible(true);
       }
@@ -47,6 +47,18 @@ export default function HabitsScreen() {
     }
   };
 
+  // ✅ Function to format creation date
+  const formatCreationDate = (isoString: string | null) => {
+    if (!isoString) return "Unknown Date";
+    try {
+      const date = new Date(isoString);
+      return format(date, "MMMM dd, yyyy"); // ✅ Formats as "March 20, 2025"
+    } catch (error) {
+      console.error("Error formatting creation date:", error);
+      return "Invalid Date";
+    }
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -55,7 +67,7 @@ export default function HabitsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         keyboardShouldPersistTaps="handled"
         contentInset={{ bottom: 100 }}
-        contentContainerStyle={[styles.listContent, { paddingBottom: Platform.OS === 'ios' ? 140 : 120 }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: Platform.OS === "ios" ? 140 : 120 }]}
         ListHeaderComponent={<View style={styles.listHeader} />}
         renderItem={({ item }) => {
           const isCompleted = completedHabitIds.includes(item.id);
@@ -78,6 +90,13 @@ export default function HabitsScreen() {
               {item.reminderTime && (
                 <Text variant="bodySmall" style={styles.reminderText}>
                   ⏰ Reminder: {formatReminderTime(item.reminderTime)}
+                </Text>
+              )}
+
+              {/* ✅ Display Creation Date */}
+              {item.createdAt && (
+                <Text variant="bodySmall" style={styles.creationText}>
+                  📅 Created on: {formatCreationDate(item.createdAt)}
                 </Text>
               )}
 
@@ -121,34 +140,34 @@ export default function HabitsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   listHeader: {
     height: 50,
   },
   centerContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   habitCard: {
     padding: 16,
     marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   habitName: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: "Inter-SemiBold",
     marginBottom: 4,
   },
   habitDescription: {
-    color: '#64748b',
+    color: "#64748b",
     marginBottom: 8,
   },
   frequencyContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginTop: 4,
   },
@@ -157,18 +176,23 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     backgroundColor: "#6366f1",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   dayText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: "Inter-Medium",
   },
   reminderText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
+  },
+  creationText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#4b5563",
   },
   buttonRow: {
     flexDirection: "row",
@@ -186,7 +210,7 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     margin: 16,
     right: 16,
     bottom: 100,
