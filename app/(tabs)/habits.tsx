@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, Alert, RefreshControl, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, Platform, TouchableOpacity } from 'react-native';
 import { Text, FAB, Surface, useTheme, Button, IconButton, Snackbar } from 'react-native-paper';
 import { useHabits } from '../../hooks/useHabits';
-import { Plus } from 'lucide-react-native';
 import { Link, useFocusEffect } from 'expo-router';
+import { Plus } from 'lucide-react-native';
+import { format } from 'date-fns';
 
 export default function HabitsScreen() {
   const theme = useTheme();
@@ -12,14 +13,12 @@ export default function HabitsScreen() {
   const [completedHabitIds, setCompletedHabitIds] = useState<string[]>([]);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-  // ✅ Auto-refresh when switching tabs
   useFocusEffect(
     useCallback(() => {
       loadHabits();
     }, [])
   );
 
-  // ✅ Pull-to-Refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadHabits();
@@ -29,10 +28,22 @@ export default function HabitsScreen() {
   const handleCompleteHabit = async (habitId: string, habitFrequency: string[]) => {
     if (!completedHabitIds.includes(habitId)) {
       await completeHabit(habitId);
-      setCompletedHabitIds(prev => [...prev, habitId]); // ✅ Persist completed state
+      setCompletedHabitIds(prev => [...prev, habitId]);
       if (habitFrequency.length === 7) {
-        setSnackbarVisible(true); // ✅ Show "Done for today" popup if it's a daily habit
+        setSnackbarVisible(true);
       }
+    }
+  };
+
+  // ✅ Function to format reminder time
+  const formatReminderTime = (isoString: string | null) => {
+    if (!isoString) return "No Reminder";
+    try {
+      const date = new Date(isoString);
+      return format(date, "hh:mm a"); // ✅ Formats time as "08:30 AM"
+    } catch (error) {
+      console.error("Error formatting reminder time:", error);
+      return "Invalid Time";
     }
   };
 
@@ -42,13 +53,10 @@ export default function HabitsScreen() {
         data={habits}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        keyboardShouldPersistTaps="handled" // ✅ Allows tapping buttons when keyboard is open
-        contentInset={{ bottom: 100 }} // ✅ iOS fix for bottom navigation bar overlap
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: Platform.OS === 'ios' ? 140 : 120 }, // ✅ Prevents bottom bar blocking buttons
-        ]}
-        ListHeaderComponent={<View style={styles.listHeader} />} // ✅ Adds space for iPhone notch
+        keyboardShouldPersistTaps="handled"
+        contentInset={{ bottom: 100 }}
+        contentContainerStyle={[styles.listContent, { paddingBottom: Platform.OS === 'ios' ? 140 : 120 }]}
+        ListHeaderComponent={<View style={styles.listHeader} />}
         renderItem={({ item }) => {
           const isCompleted = completedHabitIds.includes(item.id);
 
@@ -66,16 +74,19 @@ export default function HabitsScreen() {
                 ))}
               </View>
 
+              {/* ✅ Display Reminder Time */}
+              {item.reminderTime && (
+                <Text variant="bodySmall" style={styles.reminderText}>
+                  ⏰ Reminder: {formatReminderTime(item.reminderTime)}
+                </Text>
+              )}
+
               {/* ✅ Buttons Row (Mark as Done & Delete) */}
               <View style={styles.buttonRow}>
                 {isCompleted ? (
                   <Text style={styles.completedText}>✅ Completed</Text>
                 ) : (
-                  <Button
-                    mode="contained"
-                    onPress={() => handleCompleteHabit(item.id, item.frequency)}
-                    style={styles.completeButton}
-                  >
+                  <Button mode="contained" onPress={() => handleCompleteHabit(item.id, item.frequency)} style={styles.completeButton}>
                     Mark as Done
                   </Button>
                 )}
@@ -91,35 +102,29 @@ export default function HabitsScreen() {
         }
       />
 
+      {/* ✅ Floating Action Button (FAB) */}
       <Link href="/habits/new" asChild>
-        <FAB
-          icon={() => <Plus color="white" size={24} />}
-          label="Add Habit"
-          style={styles.fab}
-        />
+        <TouchableOpacity>
+          <FAB icon={() => <Plus color="white" size={24} />} label="Add Habit" style={styles.fab} />
+        </TouchableOpacity>
       </Link>
 
       {/* ✅ Snackbar for Daily Habits */}
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={1500}
-        style={styles.snackbar}
-      >
+      <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={1500} style={styles.snackbar}>
         ✅ Done for today!
       </Snackbar>
     </View>
   );
 }
 
-// ✅ Updated Styles
+// ✅ Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
   },
   listHeader: {
-    height: 50, // ✅ Adds space for iPhone notch (Prevents first habit from being hidden)
+    height: 50,
   },
   centerContent: {
     flex: 1,
@@ -143,7 +148,7 @@ const styles = StyleSheet.create({
   },
   frequencyContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap', // ✅ Ensures habits wrap properly
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 4,
   },
@@ -160,11 +165,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
   },
+  reminderText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6b7280',
+  },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 8, // ✅ Adjusted to prevent cutoff
+    marginTop: 8,
   },
   completeButton: {
     backgroundColor: "#4CAF50",
@@ -179,7 +189,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     margin: 16,
     right: 16,
-    bottom: 100, // ✅ Moves the FAB up so it’s not blocked
+    bottom: 100,
+    backgroundColor: "#bb33ff",
+    color: "white",
   },
   snackbar: {
     position: "absolute",
@@ -188,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
   },
   listContent: {
-    paddingBottom: 140, // ✅ Prevents bottom navigation overlap
+    paddingBottom: 140,
   },
 });
 
